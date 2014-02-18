@@ -33,10 +33,18 @@
                 "env": ["NODE_ENV=build"],
                 "mount": [".:/app"]
             }
+        },
+        "test": {
+            "options": {
+                "env": ["NODE_ENV=test"],
+                "mount": [".:/app"]
+            }
         }
     },
 
     "clusters": {
-        "dev": ["admin", "api", "web"]
+        "dev": ["admin", "api", "web"],
+        "test": ["admin", "api", "web"],
+        "prod": ["admin", "api", "web"]
     }
 }
