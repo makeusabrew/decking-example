@@ -1,0 +1,15 @@
+{
+  "name": "decking-example-admin",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "~3.4.8",
+    "restify": "~2.6.1"
+  }
+}
