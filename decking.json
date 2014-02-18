@@ -39,12 +39,23 @@
                 "env": ["NODE_ENV=test"],
                 "mount": [".:/app"]
             }
+        },
+        "staging": {
+            "options": {
+                "env": ["NODE_ENV=demo"]
+            },
+            "containers": {
+                "api": {
+                    "env": ["SECRET_STAGING_KEY=-"]
+                }
+            }
         }
     },
 
     "clusters": {
         "dev": ["admin", "api", "web"],
-        "test": ["admin", "api", "web"],
-        "prod": ["admin", "api", "web"]
+        "test": ["api"],
+        "prod": ["api", "web"],
+        "staging": ["admin", "api", "web"]
     }
 }

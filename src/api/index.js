@@ -12,56 +12,51 @@ var dbHost = process.env.DB_PORT_27017_TCP_ADDR;
 
 var dsn = "mongodb://" + dbHost + ":" + dbPort + "/decking_test";
 
-console.log("API Connecting to Redis on " + redisHost + ":" + redisPort);
-redis = redis.createClient(redisPort, redisHost);
+console.log("API Connection params to Redis: " + redisHost + ":" + redisPort);
+console.log("API Connection params to MongoDB: " + dsn);
 
-console.log("API Connecting to MongoDB on " + dsn);
-MongoClient.connect(dsn, function(err, db) {
-    if (err) {
-        throw err;
-    }
-
-    app.configure(function() {
-        app.use(function(req, res, next) {
-            console.log("%s - %s - %s %s (%s)", new Date, req.ip, req.method, req.url, req.headers["user-agent"]);
-            next();
-        });
-        app.use(app.router);
+app.configure(function() {
+    app.use(function(req, res, next) {
+        console.log("%s - %s - %s %s (%s)", new Date, req.ip, req.method, req.url, req.headers["user-agent"]);
+        next();
     });
-
-    loadRoutes();
-
-    app.listen(7777);
-
-    console.log("API Server running on port 7777");
+    app.use(app.router);
 });
 
-function loadRoutes() {
-    app.put("/visitors", function(req, res, next) {
-        redis.incr("visitors", function(err, result) {
-            if (err) {
-                return next(err);
-            }
+app.put("/visitors", function(req, res, next) {
+    var client = redis.createClient(redisPort, redisHost);
+    client.incr("visitors", function(err, result) {
+        if (err) {
+            return next(err);
+        }
 
-            return res.json(200, {
-                count: result
-            });
+        return res.json(200, {
+            count: result
         });
     });
+});
 
-    app.get("/visitors", function(req, res, next) {
-        redis.get("visitors", function(err, result) {
-            if (err) {
-                return next(err);
-            }
+app.get("/visitors", function(req, res, next) {
+    redis.get("visitors", function(err, result) {
+        if (err) {
+            return next(err);
+        }
 
-            return res.json(200, {
-                count: result
-            });
+        return res.json(200, {
+            count: result
         });
     });
+});
 
-    app.get("/users", function(req, res, next) {
+app.get("/users", function(req, res, next) {
+    MongoClient.connect(dsn, function(err, db) {
+        if (err) {
+            throw err;
+        }
+
         // fetch from MongoDB based on query
     });
-}
+});
+
+app.listen(7777);
+console.log("API Server running on port 7777");
