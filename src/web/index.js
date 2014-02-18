@@ -14,13 +14,16 @@ var client = restify.createJsonClient({
 var app = express();
 
 app.configure(function() {
-    app.use(express.logger());
+    app.use(function(req, res, next) {
+        console.log("%s - %s - %s %s (%s)", new Date, req.ip, req.method, req.url, req.headers["user-agent"]);
+        next();
+    });
     app.use(app.router);
 });
 
 app.get("/", function(req, res) {
     client.put("/visitors", function(err, apiReq, apiRes, object) {
-        res.end("You are visitor number " + object.count + "!");
+        res.end("You are visitor number " + object.count + " since the server started!");
     });
 });
 

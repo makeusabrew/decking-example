@@ -22,7 +22,10 @@ MongoClient.connect(dsn, function(err, db) {
     }
 
     app.configure(function() {
-        app.use(express.logger());
+        app.use(function(req, res, next) {
+            console.log("%s - %s - %s %s (%s)", new Date, req.ip, req.method, req.url, req.headers["user-agent"]);
+            next();
+        });
         app.use(app.router);
     });
 
@@ -36,6 +39,18 @@ MongoClient.connect(dsn, function(err, db) {
 function loadRoutes() {
     app.put("/visitors", function(req, res, next) {
         redis.incr("visitors", function(err, result) {
+            if (err) {
+                return next(err);
+            }
+
+            return res.json(200, {
+                count: result
+            });
+        });
+    });
+
+    app.get("/visitors", function(req, res, next) {
+        redis.get("visitors", function(err, result) {
             if (err) {
                 return next(err);
             }
