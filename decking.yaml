@@ -1,52 +1,110 @@
-images: 
+# Images decking should create. Use these labels for the 'decking build'
+# command, or use 'all' to run all of them.
+images:
   "decking/example-api":   "./docker/api"
   "decking/example-admin": "./docker/admin"
   "decking/example-web":   "./docker/web"
 
-containers: 
-  redis:          makeusabrew/redis
-  mongodb:
-    image:        makeusabrew/mongodb
-    extra:        "--noprealloc --smallfiles"
+# Containers to define. Options here correspond to common 'docker run' options.
+containers:
+  # These containers have a directory given in "images" above, so they are built
+  # locally from the corresponding Dockerfile
   api:
+    # # name of the image to use
     image:        decking/example-api
+
+    # # Containers that will be (a) constructed first, and (b)
+    # # [linked](https://docs.docker.com/userguide/dockerlinks/)
     dependencies:
       - redis
       - mongodb:db
+
+    # # Bind an exposed port on the container to one on the docker host
+    # # See the --publish flag under docker run
     port:         ["7777:7777"]
+
+    # # Run in privileged mode?
+    # privileged:  false
+
+    # Volumes to share among containers and docker host
+    mount:
+      # With just a path, defines a volume for other containers to mount using
+      # the `mount-from` directive
+      - "/api_exported"
+
+      # With a colon ("localname:remotename"), docker will mount given
+      # directory path on the docker machine at the second-given path on the
+      # container. Append :rw or :ro for read-write or read-only access.
+      # Boot2Docker users should make sure the VM host filesystem appears on
+      # the guest machine.
+      - ".:/data/this_repo:rw"
+
+
+    # # Additional aliases for the container
+    # aliases:
+
+    # # Extra args to supply the entrypoint script
+    # extra:      "--verbose"
+
   web:
     image:        decking/example-web
     port:         ["8888:8888"]
     dependencies:
       - api
+
+    # Mounts all volumes that the given container defined. This container now
+    # has `/api_exported` (with data from the api container) and
+    # `/data/this_repo` (with data from the docker machine)
+    #
+    # Note that this name will be suitably scoped to the cluster: the web.dev
+    # machine mounts volumes from the api.dev container.
+    mount-from:
+      - "api"
+
   admin:
     image:        decking/example-admin
     port:         ["8887:8887"]
     dependencies:
       - api
 
-groups: 
-  dev: 
-    options: 
-      env:        ["NODE_ENV=build"]
-      mount:      [".:/app"]
-        
-  test: 
-    options: 
-      env:      ["NODE_ENV=test"]
-      mount:    [".:/app"]
-            
-  staging: 
-    options: 
-      env:      ["NODE_ENV=demo"]
-    containers: 
-      api: 
-        env:    ["SECRET_STAGING_KEY=-"]
+  # These containers don't match labels under "images" above, so
+  # they are sourced from docker.
+  redis:          makeusabrew/redis
+  mongodb:
+    image:        makeusabrew/mongodb
+    extra:        "--noprealloc --smallfiles"
 
-clusters: 
+clusters:
   dev:            ["api", "web", "admin"]
   test:           ["api"]
   prod:           ["api", "web"]
   staging:        ["api", "web", "admin"]
-  
 
+groups:
+  dev:
+    options:
+      env:        ["NODE_ENV=build"]
+    containers:
+      # api:        { port: ["8200:7777"] }
+      # web:        { port: ["8201:8888"] }
+      # admin:      { port: ["8202:8887"] }
+
+  test:
+    options:
+      # # Environment variables applied to all containers in the group
+      env:
+        - "NODE_ENV=test"
+  staging:
+    # You can also give options that are specific to the container.
+    # The staging cluster will run the web and admin on alternate port,
+    # overriding the mapping above.
+    containers:
+      web:        { port: ["8301:8888"] }
+      admin:      { port: ["8302:8887"] }
+
+  staging:
+    options:
+      env:      ["NODE_ENV=demo"]
+    containers:
+      api:
+        env:    ["SECRET_STAGING_KEY=-"]
