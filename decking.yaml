@@ -1,0 +1,52 @@
+images: 
+  "decking/example-api":   "./docker/api"
+  "decking/example-admin": "./docker/admin"
+  "decking/example-web":   "./docker/web"
+
+containers: 
+  redis:          makeusabrew/redis
+  mongodb:
+    image:        makeusabrew/mongodb
+    extra:        "--noprealloc --smallfiles"
+  api:
+    image:        decking/example-api
+    dependencies:
+      - redis
+      - mongodb:db
+    port:         ["7777:7777"]
+  web:
+    image:        decking/example-web
+    port:         ["8888:8888"]
+    dependencies:
+      - api
+  admin:
+    image:        decking/example-admin
+    port:         ["8887:8887"]
+    dependencies:
+      - api
+
+groups: 
+  dev: 
+    options: 
+      env:        ["NODE_ENV=build"]
+      mount:      [".:/app"]
+        
+  test: 
+    options: 
+      env:      ["NODE_ENV=test"]
+      mount:    [".:/app"]
+            
+  staging: 
+    options: 
+      env:      ["NODE_ENV=demo"]
+    containers: 
+      api: 
+        env:    ["SECRET_STAGING_KEY=-"]
+
+clusters: 
+  dev:            ["api", "web", "admin"]
+  test:           ["api"]
+  prod:           ["api", "web"]
+  staging:        ["api", "web", "admin"]
+  
+
