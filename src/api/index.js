@@ -23,6 +23,13 @@ app.configure(function() {
     app.use(app.router);
 });
 
+app.get("/", function(req, res, next) {
+  return res.json(200, {
+    "message": "Try GET /visitors or GET /users"
+  });
+});
+
+
 app.put("/visitors", function(req, res, next) {
     var client = redis.createClient(redisPort, redisHost);
     client.incr("visitors", function(err, result) {
@@ -37,11 +44,13 @@ app.put("/visitors", function(req, res, next) {
 });
 
 app.get("/visitors", function(req, res, next) {
-    redis.get("visitors", function(err, result) {
+    var client = redis.createClient(redisPort, redisHost);
+    client.get("visitors", function(err, result) {
         if (err) {
             return next(err);
         }
 
+        result = result || 0;
         return res.json(200, {
             count: result
         });
